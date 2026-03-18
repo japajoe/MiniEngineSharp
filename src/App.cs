@@ -7,6 +7,7 @@ using MiniEngine.AudioManagement;
 using MiniEngine.Core;
 using MiniEngine.GraphicsManagement;
 using MiniEngine.GraphicsManagement.Renderers;
+using MiniEngine.GraphicsManagent;
 using MiniEngine.Utilities;
 using OpenTK.Mathematics;
 
@@ -138,6 +139,10 @@ namespace MiniEngine
 			shoutCast.Dispose();
         }
 
+		private float testVolume = 0.5f;
+		private Color buttonColor = new Color(0.2f, 0.4f, 0.8f, 1.0f);
+    	private Color sliderColor = new Color(0.1f, 0.8f, 0.2f, 1.0f);
+
         protected override void OnUpdate()
         {
 			cube.transform.rotation = Quaternion.FromAxisAngle(new Vector3(0, 1, 0), MathHelper.DegreesToRadians(Time.Elapsed * 100.0f));
@@ -151,7 +156,29 @@ namespace MiniEngine
 
 			Graphics.GetAmbientOcclusionSettings().value = lights[0].Strength * 10.0f;
 
-			Graphics2D.AddRectangle(new Vector2(10, 10), new Vector2(100, 100), 0, Color.Black);
+			GUI.Begin();
+			Vector2 position = new Vector2(50.0f, 50.0f);
+			
+			// 2. Render a simple label
+			GUI.Label(position, "System Settings", Color.White);
+
+			// 3. Render a button
+			// We use a unique ID (100) to track this specific widget's state
+			if (GUI.Button(100, position + new Vector2(0, 40), new Vector2(120, 30), "Reset Volume", buttonColor))
+			{
+				testVolume = 0.5f;
+			}
+
+			// 4. Render a slider
+			// We use a unique ID (101) for the slider
+			Vector2 sliderPos = position + new Vector2(0, 80);
+			Vector2 sliderSize = new Vector2(200, 20);
+			
+			if (GUI.Slider(101, sliderPos, sliderSize, ref testVolume, 0.0f, 1.0f, sliderColor))
+			{
+				
+			}
+			GUI.End();
         }
 
         protected override void OnLateUpdate()
