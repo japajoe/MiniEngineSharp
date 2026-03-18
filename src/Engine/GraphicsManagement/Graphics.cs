@@ -114,6 +114,8 @@ namespace MiniEngine.GraphicsManagement
                 shaders[i] = new Shader();
             
             Shadow.Generate();
+
+            Graphics2D.Initialize();
         }
 
         public Shader GetShader(ShaderName name)
@@ -187,6 +189,7 @@ namespace MiniEngine.GraphicsManagement
 
         internal static void BeginGUI()
         {
+            Graphics2D.NewFrame();
             context.imGuiController.NewFrame();
         }
 

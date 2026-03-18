@@ -150,6 +150,8 @@ namespace MiniEngine
 			lights[0].Strength = brightness;
 
 			Graphics.GetAmbientOcclusionSettings().value = lights[0].Strength * 10.0f;
+
+			Graphics2D.AddRectangle(new Vector2(10, 10), new Vector2(100, 100), 0, Color.Black);
         }
 
         protected override void OnLateUpdate()
@@ -168,8 +170,10 @@ namespace MiniEngine
 			{
 				Span<char> span = stackalloc char[64];
 				int charsWritten;
+
+				int fps = (int)Math.Round(Time.FPS);
 				
-				if(span.TryWrite($"FPS: {Time.FPS}", out charsWritten))
+				if(span.TryWrite($"FPS: {fps}", out charsWritten))
 				{
 					ImGui.Text(span.Slice(0, charsWritten));
 				}

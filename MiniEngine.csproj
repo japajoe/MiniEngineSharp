@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
+    <PackageReference Include="JAJ.Packages.FreeTypeSharp" Version="3.0.6" />
     <PackageReference Include="JAJ.Packages.GLFWNet" Version="1.0.3" />
     <PackageReference Include="JAJ.Packages.OpenTK5" Version="1.0.0" />
     <PackageReference Include="JAJ.Packages.MiniAudioEx" Version="3.2.1" />
