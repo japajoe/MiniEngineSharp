@@ -6,6 +6,7 @@ using MiniAudioEx.Native;
 using MiniEngine.Core;
 using MiniEngine.Utilities;
 using OpenTK.Mathematics;
+using static MiniAudioEx.Native.MiniAudioNative;
 
 namespace MiniEngine.AudioManagement
 {
@@ -51,11 +52,13 @@ namespace MiniEngine.AudioManagement
         {
             public AudioClip clip;
             public bool atEnd;
+            public bool isLoaded;
 
             public Sound()
             {
                 clip = new AudioClip();
                 atEnd = false;
+                isLoaded = false;
             }
         }
 
@@ -79,13 +82,20 @@ namespace MiniEngine.AudioManagement
         {
             get
             {
+                int hash = GetHashCode();
+
                 for (int i = 0; i < sounds.Count; i++)
                 {
-                    if (MiniAudioNative.ma_sound_is_playing(sounds[i].clip.Sound) > 0)
+                    if(!sounds[i].isLoaded)
+                        continue;
+
+                    if (ma_sound_is_playing(sounds[i].clip.Sound) > 0)
                         return true;
                 }
-                if (MiniAudioNative.ma_sound_is_playing(proceduralSound) > 0)
+
+                if (ma_sound_is_playing(proceduralSound) > 0)
                     return true;
+
                 return false;
             }
         }
@@ -106,8 +116,8 @@ namespace MiniEngine.AudioManagement
         /// <value></value>
         public UInt64 Cursor
         {
-            get => MiniAudioNative.ma_sound_get_time_in_pcm_frames(sounds[0].clip.Sound);
-            set => MiniAudioNative.ma_sound_seek_to_pcm_frame(sounds[0].clip.Sound, value);
+            get => ma_sound_get_time_in_pcm_frames(sounds[0].clip.Sound);
+            set => ma_sound_seek_to_pcm_frame(sounds[0].clip.Sound, value);
         }
 
         /// <summary>
@@ -116,8 +126,8 @@ namespace MiniEngine.AudioManagement
         /// <value></value>
         public float Pitch
         {
-            get => MiniAudioNative.ma_sound_group_get_pitch(group);
-            set => MiniAudioNative.ma_sound_group_set_pitch(group, value);
+            get => ma_sound_group_get_pitch(group);
+            set => ma_sound_group_set_pitch(group, value);
         }
 
         /// <summary>
@@ -126,8 +136,8 @@ namespace MiniEngine.AudioManagement
         /// <value></value>
         public float Volume
         {
-            get => MiniAudioNative.ma_sound_group_get_volume(group);
-            set => MiniAudioNative.ma_sound_group_set_volume(group, value);
+            get => ma_sound_group_get_volume(group);
+            set => ma_sound_group_set_volume(group, value);
         }
 
         /// <summary>
@@ -136,8 +146,8 @@ namespace MiniEngine.AudioManagement
         /// <value></value>
         public float Pan
         {
-            get => MiniAudioNative.ma_sound_group_get_pan(group);
-            set => MiniAudioNative.ma_sound_group_set_pan(group, value);
+            get => ma_sound_group_get_pan(group);
+            set => ma_sound_group_set_pan(group, value);
         }
 
         /// <summary>
@@ -146,8 +156,8 @@ namespace MiniEngine.AudioManagement
         /// <value></value>
         public AttenuationModel AttenuationModel
         {
-            get => (AttenuationModel)MiniAudioNative.ma_sound_group_get_attenuation_model(group);
-            set => MiniAudioNative.ma_sound_group_set_attenuation_model(group, (ma_attenuation_model)value);
+            get => (AttenuationModel)ma_sound_group_get_attenuation_model(group);
+            set => ma_sound_group_set_attenuation_model(group, (ma_attenuation_model)value);
         }
 
         /// <summary>
@@ -156,8 +166,8 @@ namespace MiniEngine.AudioManagement
         /// <value></value>
         public PanMode PanMode
         {
-            get => (PanMode)MiniAudioNative.ma_sound_group_get_pan_mode(group);
-            set => MiniAudioNative.ma_sound_group_set_pan_mode(group, (ma_pan_mode)value);
+            get => (PanMode)ma_sound_group_get_pan_mode(group);
+            set => ma_sound_group_set_pan_mode(group, (ma_pan_mode)value);
         }
 
         /// <summary>
@@ -166,8 +176,8 @@ namespace MiniEngine.AudioManagement
         /// <value></value>
         public bool Spatial
         {
-            get => MiniAudioNative.ma_sound_group_is_spatialization_enabled(group) > 0;
-            set => MiniAudioNative.ma_sound_group_set_spatialization_enabled(group, value ? (uint)1 : 0);
+            get => ma_sound_group_is_spatialization_enabled(group) > 0;
+            set => ma_sound_group_set_spatialization_enabled(group, value ? (uint)1 : 0);
         }
 
         /// <summary>
@@ -176,8 +186,8 @@ namespace MiniEngine.AudioManagement
         /// <value></value>
         public float DopplerFactor
         {
-            get => MiniAudioNative.ma_sound_group_get_doppler_factor(group);
-            set => MiniAudioNative.ma_sound_group_set_doppler_factor(group, value);
+            get => ma_sound_group_get_doppler_factor(group);
+            set => ma_sound_group_set_doppler_factor(group, value);
         }
 
         /// <summary>
@@ -186,8 +196,8 @@ namespace MiniEngine.AudioManagement
         /// <value></value>
         public float MinDistance
         {
-            get => MiniAudioNative.ma_sound_group_get_min_distance(group);
-            set => MiniAudioNative.ma_sound_group_set_min_distance(group, value);
+            get => ma_sound_group_get_min_distance(group);
+            set => ma_sound_group_set_min_distance(group, value);
         }
 
         /// <summary>
@@ -196,8 +206,8 @@ namespace MiniEngine.AudioManagement
         /// <value></value>
         public float MaxDistance
         {
-            get => MiniAudioNative.ma_sound_group_get_max_distance(group);
-            set => MiniAudioNative.ma_sound_group_set_max_distance(group, value);
+            get => ma_sound_group_get_max_distance(group);
+            set => ma_sound_group_set_max_distance(group, value);
         }
 
         /// <summary>
@@ -206,8 +216,8 @@ namespace MiniEngine.AudioManagement
         /// <value></value>
         public float RollOff
         {
-            get => MiniAudioNative.ma_sound_group_get_rolloff(group);
-            set => MiniAudioNative.ma_sound_group_set_rolloff(group, value);
+            get => ma_sound_group_get_rolloff(group);
+            set => ma_sound_group_set_rolloff(group, value);
         }
 
         /// <summary>
@@ -216,8 +226,8 @@ namespace MiniEngine.AudioManagement
         /// <value></value>
         public float MinGain
         {
-            get => MiniAudioNative.ma_sound_group_get_min_gain(group);
-            set => MiniAudioNative.ma_sound_group_set_min_gain(group, value);
+            get => ma_sound_group_get_min_gain(group);
+            set => ma_sound_group_set_min_gain(group, value);
         }
 
         /// <summary>
@@ -226,8 +236,8 @@ namespace MiniEngine.AudioManagement
         /// <value></value>
         public float MaxGain
         {
-            get => MiniAudioNative.ma_sound_group_get_max_gain(group);
-            set => MiniAudioNative.ma_sound_group_set_max_gain(group, value);
+            get => ma_sound_group_get_max_gain(group);
+            set => ma_sound_group_set_max_gain(group, value);
         }
 
         /// <summary>
@@ -241,7 +251,7 @@ namespace MiniEngine.AudioManagement
                 throw new Exception("Failed to create AudioSource because there is no current AudioContext");
 
             group = new ma_sound_group_ptr(true);
-            MiniAudioNative.ma_sound_group_init(context.Engine, (ma_sound_flags)0, default, group);
+            ma_sound_group_init(context.Engine, 0, new ma_sound_group_ptr(IntPtr.Zero), group);
 
             sounds = new List<Sound>();
 
@@ -256,19 +266,19 @@ namespace MiniEngine.AudioManagement
             effectNode = new ma_effect_node_ptr(true);
             onProcess = OnEffect;
 
-            ma_effect_node_config effectNodeConfig = MiniAudioNative.ma_effect_node_config_init(context.Channels, context.SampleRate, onProcess, IntPtr.Zero);
+            ma_effect_node_config effectNodeConfig = ma_effect_node_config_init(context.Channels, context.SampleRate, onProcess, IntPtr.Zero);
 
-            if (MiniAudioNative.ma_effect_node_init(MiniAudioNative.ma_engine_get_node_graph(context.Engine), ref effectNodeConfig, effectNode) == ma_result.success)
+            if (ma_effect_node_init(ma_engine_get_node_graph(context.Engine), ref effectNodeConfig, effectNode) == ma_result.success)
             {
-                MiniAudioNative.ma_node_attach_output_bus(new ma_node_ptr(effectNode.pointer), 0, MiniAudioNative.ma_engine_get_endpoint(context.Engine), 0);
-                MiniAudioNative.ma_node_attach_output_bus(new ma_node_ptr(group.pointer), 0, new ma_node_ptr(effectNode.pointer), 0);
+                ma_node_attach_output_bus(new ma_node_ptr(effectNode.pointer), 0, ma_engine_get_endpoint(context.Engine), 0);
+                ma_node_attach_output_bus(new ma_node_ptr(group.pointer), 0, new ma_node_ptr(effectNode.pointer), 0);
             }
 
             proceduralSound = new ma_sound_ptr(true);
             onGenerate = OnGenerate;
-            ma_procedural_data_source_config config = MiniAudioNative.ma_procedural_data_source_config_init(ma_format.f32, context.Channels, context.SampleRate, onGenerate, IntPtr.Zero);
+            ma_procedural_data_source_config config = ma_procedural_data_source_config_init(ma_format.f32, context.Channels, context.SampleRate, onGenerate, IntPtr.Zero);
             
-            MiniAudioNative.ma_sound_init_from_callback(context.Engine, ref config, (ma_sound_flags)0, group, default, proceduralSound);
+            ma_sound_init_from_callback(context.Engine, ref config, (ma_sound_flags)0, group, default, proceduralSound);
 
             loop = false;
 
@@ -289,19 +299,19 @@ namespace MiniEngine.AudioManagement
 
             if(effectNode.pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_effect_node_uninit(effectNode);
+                ma_effect_node_uninit(effectNode);
                 effectNode.Free();
             }
 
             if(proceduralSound.pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_sound_uninit(proceduralSound);
+                ma_sound_uninit(proceduralSound);
                 proceduralSound.Free();
             }
 
             if(group.pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_sound_group_uninit(group);
+                ma_sound_group_uninit(group);
                 group.Free();
             }
 
@@ -323,7 +333,7 @@ namespace MiniEngine.AudioManagement
             Stop();
             SetAtEnd(0, false);
             ApplySettings();
-            MiniAudioNative.ma_sound_start(proceduralSound);
+            ma_sound_start(proceduralSound);
         }
 
         /// <summary>
@@ -336,7 +346,7 @@ namespace MiniEngine.AudioManagement
             SetAtEnd(0, false);
             Invalidate(clip, false);
             ApplySettings();
-            MiniAudioNative.ma_sound_start(sounds[0].clip.Sound);
+            ma_sound_start(sounds[0].clip.Sound);
         }
 
         /// <summary>
@@ -348,15 +358,15 @@ namespace MiniEngine.AudioManagement
             SetAtEnd(currentIndex, false);
             Invalidate(clip, true);
 
-            if (MiniAudioNative.ma_sound_is_playing(sounds[currentIndex].clip.Sound) > 0)
+            if (ma_sound_is_playing(sounds[currentIndex].clip.Sound) > 0)
             {
-                MiniAudioNative.ma_sound_stop(sounds[currentIndex].clip.Sound);
-                MiniAudioNative.ma_sound_seek_to_pcm_frame(sounds[currentIndex].clip.Sound, 0);
+                ma_sound_stop(sounds[currentIndex].clip.Sound);
+                ma_sound_seek_to_pcm_frame(sounds[currentIndex].clip.Sound, 0);
             }
 
             ApplySettings();
 
-            MiniAudioNative.ma_sound_start(sounds[currentIndex].clip.Sound);
+            ma_sound_start(sounds[currentIndex].clip.Sound);
 
             if (++currentIndex >= sounds.Count - 1)
                 currentIndex = 1;
@@ -367,11 +377,11 @@ namespace MiniEngine.AudioManagement
         /// </summary>
         public void Stop()
         {
-            MiniAudioNative.ma_sound_stop(proceduralSound);
+            ma_sound_stop(proceduralSound);
 
             for (int i = 0; i < sounds.Count; i++)
             {
-                MiniAudioNative.ma_sound_stop(sounds[i].clip.Sound);
+                ma_sound_stop(sounds[i].clip.Sound);
                 SetAtEnd(i, false);
             }
         }
@@ -380,7 +390,7 @@ namespace MiniEngine.AudioManagement
         {
             for (int i = 0; i < sounds.Count; i++)
             {
-                if (MiniAudioNative.ma_sound_at_end(sounds[i].clip.Sound) > 0)
+                if (ma_sound_at_end(sounds[i].clip.Sound) > 0)
                 {
                     if (!sounds[i].atEnd)
                     {
@@ -479,19 +489,21 @@ namespace MiniEngine.AudioManagement
                 {
                     for(int i = 0; i < sounds.Count; i++)
                     {
-                        clip.CopyTo(sounds[i].clip, group);
+                        if(clip.CopyTo(sounds[i].clip, group))
+                            sounds[i].isLoaded = true;
                     }
                 }
                 else
                 {
-                    clip.CopyTo(sounds[0].clip, group);
+                    if(clip.CopyTo(sounds[0].clip, group))
+                        sounds[0].isLoaded = true;
                 }
             }
         }
 
         private void ApplySettings()
         {
-            MiniAudioNative.ma_sound_set_looping(sounds[0].clip.Sound, loop ? (UInt32)1 : 0);
+            ma_sound_set_looping(sounds[0].clip.Sound, loop ? (UInt32)1 : 0);
             ApplySpatialSettings();
         }
 
@@ -499,13 +511,14 @@ namespace MiniEngine.AudioManagement
         {
             if(!Spatial)
                 return;
+
             Vector3 position = transform.position;
             Vector3 forward = transform.forward;
             Vector3 velocity = transform.velocity;
-            
-            MiniAudioNative.ma_sound_group_set_position(group, position.X, position.Y, position.Z);
-            MiniAudioNative.ma_sound_group_set_direction(group, forward.Y, forward.Y, forward.Z);
-            MiniAudioNative.ma_sound_group_set_velocity(group, velocity.X, velocity.Y, velocity.Z);
+
+            ma_sound_group_set_position(group, position.X, position.Y, position.Z);
+            ma_sound_group_set_direction(group, forward.X, forward.Y, forward.Z);
+            ma_sound_group_set_velocity(group, velocity.X, velocity.Y, velocity.Z);
         }
 
         private void SetAtEnd(int sourceIndex, bool atEnd)

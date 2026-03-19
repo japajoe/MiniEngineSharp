@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ImGuiNET;
+using MiniAudioEx.Utilities;
 using MiniEngine.AudioManagement;
 using MiniEngine.Core;
 using MiniEngine.GraphicsManagement;
@@ -13,14 +14,36 @@ using OpenTK.Mathematics;
 
 namespace MiniEngine
 {
+	public class CubeObject : IDisposable
+	{
+		public Model model;
+		public AudioSource audioSource;
+
+		public CubeObject()
+		{
+			model = ModelGenerator.Get(ModelName.Cube);
+			audioSource = new AudioSource();
+			audioSource.transform.SetParent(model.transform);
+			audioSource.AttenuationModel = AttenuationModel.Linear;
+			audioSource.Spatial = true;
+		}
+
+        public void Dispose()
+        {
+            audioSource.Dispose();
+        }
+    }
+
     public sealed class App : Application
     {
 		private AudioStream stream;
+		private AudioListener audioListener;
+		private AudioClip audioClip;
 		private Camera camera;
 		private List<Light> lights; 
 		private ProceduralSkybox skybox;
         private Model ground;
-		private Model cube;
+		private List<CubeObject> cubes;
 		private CameraController cameraController;
 		private Texture2D groundTexture;
 		private string currentTrack = "Now Playing: Unknown";
@@ -54,10 +77,10 @@ namespace MiniEngine
 			stream = new AudioStream();
 			
 			stream.MetadataReceived += (string metadata) => {
-				currentTrack = "Now Playing: " + stream.GetTitle(metadata);
+				currentTrack = "Now Playing: " + stream.CurrentTrack;
 			};
 
-			stream.Play(streams[selectedStreamIndex]);
+			//stream.Play(streams[selectedStreamIndex]);
 
 			camera = new Camera();
 			camera.ClearColor = Color.RayWhite;
@@ -75,8 +98,14 @@ namespace MiniEngine
 			lights[0].CastShadows = true;
 			lights[0].transform.rotation= Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(56.0f));
 
-			cube = ModelGenerator.Get(ModelName.Cube);
-			cube.GetChild(0).Color = Color.Orange;
+			cubes = new List<CubeObject>();
+			cubes.Add(new CubeObject());
+			cubes.Add(new CubeObject());
+
+			cubes[0].model.GetChild(0).Color = Color.Orange;
+			
+			cubes[1].model.GetChild(0).Color = Color.Purple;
+			cubes[1].model.transform.position = new Vector3(10, 2, 3);
             
 			ground = ModelGenerator.Get(ModelName.Plane);
             ground.transform.scale = new Vector3(1000, 1, 1000);
@@ -100,11 +129,21 @@ namespace MiniEngine
 			Graphics.Add(lights[0]);
 			Graphics.Add(skybox);
 			Graphics.Add(ground);
-            Graphics.Add(cube);
+
+			for(int i = 0; i < cubes.Count; i++)
+            	Graphics.Add(cubes[i].model);
 
             World.FogColor = Color.RayWhite;
 			World.FogDensity = 0.0032f;
 			Graphics.GetAmbientOcclusionSettings().globalEnabled = true;
+
+			audioListener = new AudioListener();
+			audioListener.transform.SetParent(camera.transform);
+
+			audioClip = new AudioClip("/home/wesley/Assets/Audio/image.mp3");
+
+			cubes[1].audioSource.Loop = true;
+			cubes[1].audioSource.Play(audioClip);
 			
 			LoadStations();
         }
@@ -145,9 +184,9 @@ namespace MiniEngine
 
         protected override void OnUpdate()
         {
-			cube.transform.rotation = Quaternion.FromAxisAngle(new Vector3(0, 1, 0), MathHelper.DegreesToRadians(Time.Elapsed * 100.0f));
+			cubes[0].model.transform.rotation = Quaternion.FromAxisAngle(new Vector3(0, 1, 0), MathHelper.DegreesToRadians(Time.Elapsed * 100.0f));
 			float y = (float)Math.Sin(Time.Elapsed) * 1.0f;
-			cube.transform.position = new Vector3(0, 1.8f + y, 0);
+			cubes[0].model.transform.position = new Vector3(0, 1.8f + y, 0);
 
 			float sunAngle = MathHelper.RadiansToDegrees(lights[0].transform.rotation.ToEulerAngles().X);
 			float brightness = 1.0f - (float)Math.Pow((sunAngle - 90.0f) / 90.0f, 2.0f);
@@ -156,29 +195,6 @@ namespace MiniEngine
 
 			Graphics.GetAmbientOcclusionSettings().value = lights[0].Strength * 10.0f;
 
-			GUI.Begin();
-			Vector2 position = new Vector2(50.0f, 50.0f);
-			
-			// 2. Render a simple label
-			GUI.Label(position, "System Settings", Color.White);
-
-			// 3. Render a button
-			// We use a unique ID (100) to track this specific widget's state
-			if (GUI.Button(100, position + new Vector2(0, 40), new Vector2(120, 30), "Reset Volume", buttonColor))
-			{
-				testVolume = 0.5f;
-			}
-
-			// 4. Render a slider
-			// We use a unique ID (101) for the slider
-			Vector2 sliderPos = position + new Vector2(0, 80);
-			Vector2 sliderSize = new Vector2(200, 20);
-			
-			if (GUI.Slider(101, sliderPos, sliderSize, ref testVolume, 0.0f, 1.0f, sliderColor))
-			{
-				
-			}
-			GUI.End();
         }
 
         protected override void OnLateUpdate()
@@ -236,5 +252,33 @@ namespace MiniEngine
 			}
 			ImGui.End();
         }
+
+		private void TestGUI()
+		{
+			GUI.Begin();
+			Vector2 position = new Vector2(50.0f, 50.0f);
+			
+			// 2. Render a simple label
+			GUI.Label(position, "System Settings", Color.White);
+
+			// 3. Render a button
+			// We use a unique ID (100) to track this specific widget's state
+			if (GUI.Button(100, position + new Vector2(0, 40), new Vector2(120, 30), "Reset Volume", buttonColor))
+			{
+				testVolume = 0.5f;
+			}
+
+			// 4. Render a slider
+			// We use a unique ID (101) for the slider
+			Vector2 sliderPos = position + new Vector2(0, 80);
+			Vector2 sliderSize = new Vector2(200, 20);
+			
+			if (GUI.Slider(101, sliderPos, sliderSize, ref testVolume, 0.0f, 1.0f, sliderColor))
+			{
+				
+			}
+
+			GUI.End();
+		}
     }
 }

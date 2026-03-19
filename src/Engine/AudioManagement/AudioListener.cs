@@ -1,7 +1,7 @@
 using System;
-using MiniAudioEx.Native;
 using MiniEngine.Core;
 using OpenTK.Mathematics;
+using static MiniAudioEx.Native.MiniAudioNative;
 
 namespace MiniEngine.AudioManagement
 {
@@ -19,8 +19,8 @@ namespace MiniEngine.AudioManagement
         /// <value></value>
         public bool Enabled
         {
-            get => MiniAudioNative.ma_engine_listener_is_enabled(context.Engine, index) > 0;
-            set => MiniAudioNative.ma_engine_listener_set_enabled(context.Engine, index, value ? (UInt32)1 : 0);
+            get => ma_engine_listener_is_enabled(context.Engine, index) > 0;
+            set => ma_engine_listener_set_enabled(context.Engine, index, value ? (UInt32)1 : 0);
         }
 
         public AudioListener(UInt32 index = 0) : base()
@@ -30,8 +30,8 @@ namespace MiniEngine.AudioManagement
             if(context == null)
                 throw new Exception("Failed to initialize AudioListener because there is no current AudioContext");
 
-            if(index >= MiniAudioNative.MA_ENGINE_MAX_LISTENERS)
-                throw new Exception("Listener index should be less than " + MiniAudioNative.MA_ENGINE_MAX_LISTENERS);
+            if(index >= MA_ENGINE_MAX_LISTENERS)
+                throw new Exception("Listener index should be less than " + MA_ENGINE_MAX_LISTENERS);
 
             this.index = index;
 
@@ -39,9 +39,9 @@ namespace MiniEngine.AudioManagement
             Vector3 forward = transform.forward;
             Vector3 velocity = transform.velocity;
 
-            MiniAudioNative.ma_engine_listener_set_position(context.Engine, index, position.X, position.Y, position.Z);
-            MiniAudioNative.ma_engine_listener_set_direction(context.Engine, index, forward.X, forward.Y, forward.Z);
-            MiniAudioNative.ma_engine_listener_set_velocity(context.Engine, index, velocity.X, velocity.Y, velocity.Z);
+            ma_engine_listener_set_position(context.Engine, index, position.X, position.Y, position.Z);
+            ma_engine_listener_set_direction(context.Engine, index, forward.X, forward.Y, forward.Z);
+            ma_engine_listener_set_velocity(context.Engine, index, velocity.X, velocity.Y, velocity.Z);
             
             Enabled = true;
 
@@ -57,9 +57,9 @@ namespace MiniEngine.AudioManagement
             Vector3 forward = transform.forward;
             Vector3 velocity = transform.velocity;
 
-            MiniAudioNative.ma_engine_listener_set_position(context.Engine, index, position.X, position.Y, position.Z);
-            MiniAudioNative.ma_engine_listener_set_direction(context.Engine, index, forward.X, forward.Y, forward.Z);
-            MiniAudioNative.ma_engine_listener_set_velocity(context.Engine, index, velocity.X, velocity.Y, velocity.Z);
+            ma_engine_listener_set_position(context.Engine, index, position.X, position.Y, position.Z);
+            ma_engine_listener_set_direction(context.Engine, index, forward.X, forward.Y, forward.Z);
+            ma_engine_listener_set_velocity(context.Engine, index, velocity.X, velocity.Y, velocity.Z);
         }
 
         private void ApplySpatialSettings()

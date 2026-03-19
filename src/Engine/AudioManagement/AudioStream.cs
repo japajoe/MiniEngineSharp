@@ -8,6 +8,7 @@ using MiniAudioEx.Utilities;
 using System.IO;
 using System.Net.Security;
 using System.Text.RegularExpressions;
+using static MiniAudioEx.Native.MiniAudioNative;
 
 namespace MiniEngine.AudioManagement
 {
@@ -49,22 +50,19 @@ namespace MiniEngine.AudioManagement
         private float volume;
         private int metaInterval;
         private int bytesUntilMeta;
+        private string currentTrack;
         private const int bufferCapacity = 1024 * 128;
         private const int bufferThreshold = 1024 * 64;
 
-        public bool IsPlaying
-        {
-            get
-            {
-                return isRunning.Load();
-            }
-        }
+        public bool IsPlaying => isRunning.Load();
 
         public float Volume
         {
             get => volume;
             set => volume = Math.Max(value, 0.0f);
         }
+
+        public string CurrentTrack => currentTrack;
 
         public AudioStream(AudioDevice playbackDevice = null)
         {
@@ -81,6 +79,7 @@ namespace MiniEngine.AudioManagement
             isBuffering = true;
             metaInterval = 0;
             bytesUntilMeta = 0;
+            currentTrack = "Unknown";
         }
 
         public void Play(string url)
@@ -137,19 +136,6 @@ namespace MiniEngine.AudioManagement
             }
         }
 
-        public string GetTitle(string metadata)
-        {
-            var match = Regex.Match(metadata, @"StreamTitle='(.*?)';", RegexOptions.Singleline);
-
-            if (match.Success)
-            {
-                string title = match.Groups[1].Value.Replace("\\'", "'"); 
-                return title.Trim();
-            }
-
-            return string.Empty;
-        }
-
         private void Disconnect()
         {
             if (networkStream != null)
@@ -190,9 +176,9 @@ namespace MiniEngine.AudioManagement
         {
             if (audioInitialized)
             {
-                MiniAudioNative.ma_device_stop(device);
-                MiniAudioNative.ma_device_uninit(device);
-                MiniAudioNative.ma_decoder_uninit(decoder);
+                ma_device_stop(device);
+                ma_device_uninit(device);
+                ma_decoder_uninit(decoder);
                 audioInitialized = false;
             }
         }
@@ -233,7 +219,6 @@ namespace MiniEngine.AudioManagement
             try
             {
                 socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
 
                 socket.Connect(host, port);
 
@@ -404,6 +389,19 @@ namespace MiniEngine.AudioManagement
                         }
 
                         string metaString = Encoding.UTF8.GetString(metaBuffer).TrimEnd('\0');
+
+                        var match = Regex.Match(metaString, @"StreamTitle='(.*?)';", RegexOptions.Singleline);
+
+                        if (match.Success)
+                        {
+                            string current = match.Groups[1].Value.Replace("\\'", "'"); 
+                            currentTrack = current.Trim();
+                        }
+                        else
+                        {
+                            currentTrack = "Unknown";
+                        }
+
                         MetadataReceived?.Invoke(metaString);
                     }
 
@@ -467,8 +465,8 @@ namespace MiniEngine.AudioManagement
 
         private unsafe bool InitializeAudio()
         {
-            ma_decoder_config decoderConfig = MiniAudioNative.ma_decoder_config_init(ma_format.f32, 0, 0);
-            ma_result result = MiniAudioNative.ma_decoder_init(decoderReadProc, decoderSeekProc, IntPtr.Zero, ref decoderConfig, decoder);
+            ma_decoder_config decoderConfig = ma_decoder_config_init(ma_format.f32, 0, 0);
+            ma_result result = ma_decoder_init(decoderReadProc, decoderSeekProc, IntPtr.Zero, ref decoderConfig, decoder);
 
             if (result != ma_result.success)
             {
@@ -476,7 +474,7 @@ namespace MiniEngine.AudioManagement
                 return false;
             }
 
-            ma_device_config deviceConfig = MiniAudioNative.ma_device_config_init(ma_device_type.playback);
+            ma_device_config deviceConfig = ma_device_config_init(ma_device_type.playback);
             deviceConfig.playback.format = decoder.Get()->outputFormat;
             deviceConfig.playback.channels = decoder.Get()->outputChannels;
             deviceConfig.sampleRate = decoder.Get()->outputSampleRate;
@@ -487,23 +485,23 @@ namespace MiniEngine.AudioManagement
                 fixed(ma_device_id *deviceId = &playbackDevice.info.id)
                 {
                     deviceConfig.playback.pDeviceID = new ma_device_id_ptr(new IntPtr(deviceId));
-                    result = MiniAudioNative.ma_device_init(new ma_context_ptr(IntPtr.Zero), ref deviceConfig, device);
+                    result = ma_device_init(new ma_context_ptr(IntPtr.Zero), ref deviceConfig, device);
                 }
             }
             else
             {
-                result = MiniAudioNative.ma_device_init(new ma_context_ptr(IntPtr.Zero), ref deviceConfig, device);
+                result = ma_device_init(new ma_context_ptr(IntPtr.Zero), ref deviceConfig, device);
             }
 
             if (result != ma_result.success)
             {
                 Console.WriteLine("Failed to create device");
-                MiniAudioNative.ma_decoder_uninit(decoder);
+                ma_decoder_uninit(decoder);
                 return false;
             }
 
             audioInitialized = true;
-            MiniAudioNative.ma_device_start(device);
+            ma_device_start(device);
             return true;
         }
 
@@ -567,7 +565,7 @@ namespace MiniEngine.AudioManagement
                 return;
             }
 
-            if (MiniAudioNative.ma_decoder_read_pcm_frames(decoder, pOutput, frameCount, IntPtr.Zero) == ma_result.success)
+            if (ma_decoder_read_pcm_frames(decoder, pOutput, frameCount, IntPtr.Zero) == ma_result.success)
             {
                 if (volume == 1.0f)
                 {

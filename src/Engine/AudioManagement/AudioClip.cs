@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using MiniAudioEx.Native;
+using static MiniAudioEx.Native.MiniAudioNative;
 
 namespace MiniEngine.AudioManagement
 {
@@ -60,9 +61,9 @@ namespace MiniEngine.AudioManagement
             ma_result result = ma_result.success;
             
             if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                result = MiniAudioNative.ma_sound_init_from_file_w(context.Engine, filePath, flags, default, default, sound);
+                result = ma_sound_init_from_file_w(context.Engine, filePath, flags, new ma_sound_group_ptr(IntPtr.Zero), new ma_fence_ptr(IntPtr.Zero), sound);
             else
-                result = MiniAudioNative.ma_sound_init_from_file(context.Engine, filePath, flags, default, default, sound);
+                result = ma_sound_init_from_file(context.Engine, filePath, flags, new ma_sound_group_ptr(IntPtr.Zero), new ma_fence_ptr(IntPtr.Zero), sound);
 
             if (result != ma_result.success)
             {
@@ -70,7 +71,7 @@ namespace MiniEngine.AudioManagement
                 throw new Exception("Failed to initialize AudioClip: " + result);
             }
 
-            MiniAudioNative.ma_sound_get_length_in_pcm_frames(sound, out pcmLength);
+            ma_sound_get_length_in_pcm_frames(sound, out pcmLength);
 
             hashCode = (UInt64)filePath.GetHashCode();
 
@@ -107,7 +108,7 @@ namespace MiniEngine.AudioManagement
             Marshal.Copy(data, 0, dataHandle, data.Length);
 
             ma_sound_flags flags = ma_sound_flags.decode;
-            ma_result result = MiniAudioNative.ma_sound_init_from_memory(context.Engine, dataHandle, dataLength, flags, default, default, sound);
+            ma_result result = ma_sound_init_from_memory(context.Engine, dataHandle, dataLength, flags, new ma_sound_group_ptr(IntPtr.Zero), new ma_fence_ptr(IntPtr.Zero), sound);
 
             if (result != ma_result.success)
             {
@@ -115,7 +116,7 @@ namespace MiniEngine.AudioManagement
                 throw new Exception("Failed to initialize AudioClip: " + result);
             }
 
-            MiniAudioNative.ma_sound_get_length_in_pcm_frames(sound, out pcmLength);
+            ma_sound_get_length_in_pcm_frames(sound, out pcmLength);
 
             hashCode = GetHashCode(data, data.Length);
 
@@ -142,8 +143,8 @@ namespace MiniEngine.AudioManagement
                 return false;
             }
 
-            MiniAudioNative.ma_sound_stop(other.sound);
-            MiniAudioNative.ma_sound_uninit(other.sound);
+            ma_sound_stop(other.sound);
+            ma_sound_uninit(other.sound);
 
             other.streamFromDisk = streamFromDisk;
             other.dataLength = dataLength;
@@ -158,16 +159,16 @@ namespace MiniEngine.AudioManagement
             if(flags == ma_sound_flags.stream)
             {
                 if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    result = MiniAudioNative.ma_sound_init_from_file_w(context.Engine, filePath, flags, group, default, other.sound);
+                    result = ma_sound_init_from_file_w(context.Engine, filePath, flags, group, new ma_fence_ptr(IntPtr.Zero), other.sound);
                 else
-                    result = MiniAudioNative.ma_sound_init_from_file(context.Engine, filePath, flags, group, default, other.sound);
+                    result = ma_sound_init_from_file(context.Engine, filePath, flags, group, new ma_fence_ptr(IntPtr.Zero), other.sound);
             }
             else
             {
                 if(dataHandle == IntPtr.Zero)
-                    result = MiniAudioNative.ma_sound_init_copy(context.Engine, sound, flags, group, other.sound);
+                    result = ma_sound_init_copy(context.Engine, sound, flags, group, other.sound);
                 else
-                    result = MiniAudioNative.ma_sound_init_from_memory(context.Engine, dataHandle, dataLength, flags, group, default, other.sound);
+                    result = ma_sound_init_from_memory(context.Engine, dataHandle, dataLength, flags, group, new ma_fence_ptr(IntPtr.Zero), other.sound);
             }
             
             return result == ma_result.success;
@@ -180,7 +181,7 @@ namespace MiniEngine.AudioManagement
 
             if(sound.pointer != IntPtr.Zero)
             {
-                MiniAudioNative.ma_sound_uninit(sound);
+                ma_sound_uninit(sound);
                 sound.Free();
             }
 

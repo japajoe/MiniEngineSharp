@@ -175,5 +175,22 @@ namespace MiniEngine.GraphicsManagent
                 color.a
             );
         }
+
+        private static void DrawCenteredText(Vector2 position, Vector2 size, string text, Color color)
+        {
+            if (font == null)
+            {
+                return;
+            }
+
+            float textWidth;
+            float textHeight;
+            font.CalculateBounds(text, text.Length, fontSize, out textWidth, out textHeight);
+
+            float centerX = position.X + (size.X - textWidth) * 0.5f;
+            float centerY = position.Y + (size.Y - textHeight) * 0.5f;
+
+            Graphics2D.AddText(new Vector2(centerX, centerY), font, text, fontSize, color, false);
+        }
     }
 }

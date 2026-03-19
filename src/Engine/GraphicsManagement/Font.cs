@@ -182,7 +182,6 @@ namespace MiniEngine.GraphicsManagement
 
             ReadOnlySpan<byte> pTextureData = CollectionsMarshal.AsSpan(m_textureData);
 
-
             GL.GenTextures(1, ref m_textureId);
             GL.BindTexture(TextureTarget.Texture2d, m_textureId);
             
@@ -193,7 +192,6 @@ namespace MiniEngine.GraphicsManagement
             GL.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
             GL.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
             GL.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
-            //GL.GenerateMipmap(TextureTarget.Texture2d);
 
             GL.ObjectLabel(ObjectIdentifier.Texture, (uint)m_textureId, -1, "FontAtlas");
 
@@ -364,12 +362,6 @@ namespace MiniEngine.GraphicsManagement
             }
 
             return yOffset;
-        }
-
-        private UInt32 FT_LOAD_TARGET_(UInt32 v)
-        {
-            UInt32 result = (v & 15) << 16;
-            return result;
         }
 
         private bool Load(FT_FaceRec_ *fontFace) 

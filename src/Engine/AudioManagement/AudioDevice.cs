@@ -1,5 +1,6 @@
 using System;
 using MiniAudioEx.Native;
+using static MiniAudioEx.Native.MiniAudioNative;
 
 namespace MiniEngine.AudioManagement
 {
@@ -19,20 +20,20 @@ namespace MiniEngine.AudioManagement
         {
             ma_context_ptr context = new ma_context_ptr(true);
 
-            if (MiniAudioNative.ma_context_init(null, context) != ma_result.success)
+            if (ma_context_init(null, context) != ma_result.success)
             {
                 context.Free();
                 throw new Exception("Can not obtain devices, failed to create audio context");
             }
 
-            if (MiniAudioNative.ma_context_get_devices(context, out ma_device_info[] playbackDevices, out ma_device_info[] captureDevices) != ma_result.success)
+            if (ma_context_get_devices(context, out ma_device_info[] playbackDevices, out ma_device_info[] captureDevices) != ma_result.success)
             {
-                MiniAudioNative.ma_context_uninit(context);
+                ma_context_uninit(context);
                 context.Free();
                 throw new Exception("Failed to get devices");
             }
 
-            MiniAudioNative.ma_context_uninit(context);
+            ma_context_uninit(context);
             context.Free();
 
             AudioDevice[] devices = null;

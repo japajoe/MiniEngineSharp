@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using MiniAudioEx.Native;
+using static MiniAudioEx.Native.MiniAudioNative;
 
 namespace MiniEngine.AudioManagement
 {   
@@ -60,7 +61,7 @@ namespace MiniEngine.AudioManagement
             resourceManager = new ma_resource_manager_ptr(true);
             deviceDataProc = OnDeviceData;
 
-            if (MiniAudioNative.ma_log_init(log) != ma_result.success)
+            if (ma_log_init(log) != ma_result.success)
             {
                 Dispose();
                 throw new Exception("Failed to initialize log");
@@ -70,22 +71,22 @@ namespace MiniEngine.AudioManagement
             onLog = OnLog;
 			logCallback.SetLogCallback(onLog);
 			
-            if (MiniAudioNative.ma_log_register_callback(log, logCallback) != ma_result.success)
+            if (ma_log_register_callback(log, logCallback) != ma_result.success)
             {
                 Dispose();
                 throw new Exception("Failed to initialize log callback");
             }
 
-            ma_context_config contextConfig = MiniAudioNative.ma_context_config_init();
+            ma_context_config contextConfig = ma_context_config_init();
             contextConfig.pLog = log;
 
-            if (MiniAudioNative.ma_context_init(null, ref contextConfig, context) != ma_result.success)
+            if (ma_context_init(null, ref contextConfig, context) != ma_result.success)
             {
                 Dispose();
                 throw new Exception("Failed to create context");
             }
 
-            ma_device_config deviceConfig = MiniAudioNative.ma_device_config_init(ma_device_type.playback);
+            ma_device_config deviceConfig = ma_device_config_init(ma_device_type.playback);
             deviceConfig.playback.format = ma_format.f32;
             deviceConfig.playback.channels = channels;
             deviceConfig.playback.pDeviceID = new ma_device_id_ptr(true);
@@ -95,7 +96,7 @@ namespace MiniEngine.AudioManagement
 
             if(audioDevice == null)
             {
-                if (MiniAudioNative.ma_context_get_devices(context, out ma_device_info[] ppPlaybackDeviceInfos, out ma_device_info[] ppCaptureDeviceInfos) != ma_result.success)
+                if (ma_context_get_devices(context, out ma_device_info[] ppPlaybackDeviceInfos, out ma_device_info[] ppCaptureDeviceInfos) != ma_result.success)
                 {
                     Dispose();
                     throw new Exception("Failed to get devices");
@@ -124,7 +125,7 @@ namespace MiniEngine.AudioManagement
                 }
             }
 
-            if (MiniAudioNative.ma_device_init(context, ref deviceConfig, device) != ma_result.success)
+            if (ma_device_init(context, ref deviceConfig, device) != ma_result.success)
             {
                 deviceConfig.playback.pDeviceID.Free();
                 Dispose();
@@ -134,13 +135,13 @@ namespace MiniEngine.AudioManagement
             deviceConfig.playback.pDeviceID.Free();
 
             ma_decoding_backend_vtable_ptr[] vtables = {
-                MiniAudioNative.ma_libvorbis_get_decoding_backend_ptr()
+                ma_libvorbis_get_decoding_backend_ptr()
             };
 
-            ma_resource_manager_config resourceManagerConfig = MiniAudioNative.ma_resource_manager_config_init();
+            ma_resource_manager_config resourceManagerConfig = ma_resource_manager_config_init();
             resourceManagerConfig.SetCustomDecodingBackendVTables(vtables);
 
-            if (MiniAudioNative.ma_resource_manager_init(ref resourceManagerConfig, resourceManager) != ma_result.success)
+            if (ma_resource_manager_init(ref resourceManagerConfig, resourceManager) != ma_result.success)
             {
                 resourceManagerConfig.FreeCustomDecodingBackendVTables();
                 Dispose();
@@ -149,12 +150,12 @@ namespace MiniEngine.AudioManagement
 
             resourceManagerConfig.FreeCustomDecodingBackendVTables();
 
-            ma_engine_config engineConfig = MiniAudioNative.ma_engine_config_init();
-            engineConfig.listenerCount = MiniAudioNative.MA_ENGINE_MAX_LISTENERS;
+            ma_engine_config engineConfig = ma_engine_config_init();
+            engineConfig.listenerCount = MA_ENGINE_MAX_LISTENERS;
             engineConfig.pDevice = device;
             engineConfig.pResourceManager = resourceManager;
 
-            if (MiniAudioNative.ma_engine_init(ref engineConfig, engine) != ma_result.success)
+            if (ma_engine_init(ref engineConfig, engine) != ma_result.success)
             {
                 Dispose();
                 throw new Exception("Failed to initialize ma_engine");
@@ -165,7 +166,7 @@ namespace MiniEngine.AudioManagement
                 device.Get()->pUserData = engine.pointer;
             }
 
-            if (MiniAudioNative.ma_device_start(device) != ma_result.success)
+            if (ma_device_start(device) != ma_result.success)
             {
                 Dispose();
                 throw new Exception("Failed to start ma_device");
@@ -272,11 +273,11 @@ namespace MiniEngine.AudioManagement
             listeners.Clear();
             clips.Clear();
 
-			MiniAudioNative.ma_engine_uninit(engine);
-			MiniAudioNative.ma_device_uninit(device);
-			MiniAudioNative.ma_context_uninit(context);
-			MiniAudioNative.ma_resource_manager_uninit(resourceManager);
-            MiniAudioNative.ma_log_uninit(log);
+			ma_engine_uninit(engine);
+			ma_device_uninit(device);
+			ma_context_uninit(context);
+			ma_resource_manager_uninit(resourceManager);
+            ma_log_uninit(log);
 
 			engine.Free();
 			context.Free();
@@ -311,7 +312,7 @@ namespace MiniEngine.AudioManagement
 
             ma_engine_ptr pEngine = new ma_engine_ptr(device->pUserData);
 
-            MiniAudioNative.ma_engine_read_pcm_frames(pEngine, pOutput, frameCount);
+            ma_engine_read_pcm_frames(pEngine, pOutput, frameCount);
 		}
 
 		private void OnLog(IntPtr pUserData, UInt32 level, IntPtr pMessage)

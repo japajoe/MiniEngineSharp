@@ -189,12 +189,12 @@ namespace MiniEngine.GraphicsManagement
 
         internal static void BeginGUI()
         {
-            Graphics2D.NewFrame();
             context.imGuiController.NewFrame();
         }
 
         internal static void EndGUI()
         {
+            Graphics2D.NewFrame();
             context.imGuiController.EndFrame();
         }
 
