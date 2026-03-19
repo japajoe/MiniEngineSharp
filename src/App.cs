@@ -80,7 +80,7 @@ namespace MiniEngine
 				currentTrack = "Now Playing: " + stream.CurrentTrack;
 			};
 
-			//stream.Play(streams[selectedStreamIndex]);
+			stream.Play(streams[selectedStreamIndex]);
 
 			camera = new Camera();
 			camera.ClearColor = Color.RayWhite;
@@ -140,10 +140,7 @@ namespace MiniEngine
 			audioListener = new AudioListener();
 			audioListener.transform.SetParent(camera.transform);
 
-			audioClip = new AudioClip("/home/wesley/Assets/Audio/image.mp3");
 
-			cubes[1].audioSource.Loop = true;
-			cubes[1].audioSource.Play(audioClip);
 			
 			LoadStations();
         }
