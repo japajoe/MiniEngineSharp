@@ -1,10 +1,9 @@
 using System;
 using MiniEngine.Core;
 using MiniEngine.Embedded;
-using MiniEngine.GraphicsManagement;
 using OpenTK.Mathematics;
 
-namespace MiniEngine.GraphicsManagent
+namespace MiniEngine.GraphicsManagement
 {
     public static class GUI
     {

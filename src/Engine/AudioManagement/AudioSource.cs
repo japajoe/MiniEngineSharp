@@ -489,14 +489,12 @@ namespace MiniEngine.AudioManagement
                 {
                     for(int i = 0; i < sounds.Count; i++)
                     {
-                        if(clip.CopyTo(sounds[i].clip, group))
-                            sounds[i].isLoaded = true;
+                        sounds[i].isLoaded = clip.CopyTo(sounds[i].clip, group);
                     }
                 }
                 else
                 {
-                    if(clip.CopyTo(sounds[0].clip, group))
-                        sounds[0].isLoaded = true;
+                    sounds[0].isLoaded = clip.CopyTo(sounds[0].clip, group);
                 }
             }
         }
@@ -512,13 +510,19 @@ namespace MiniEngine.AudioManagement
             if(!Spatial)
                 return;
 
-            Vector3 position = transform.position;
-            Vector3 forward = transform.forward;
-            Vector3 velocity = transform.velocity;
+            Vector3 position = transform.root.position;
+            Vector3 direction = transform.root.forward;
+            Vector3 velocity = transform.root.velocity;
 
-            ma_sound_group_set_position(group, position.X, position.Y, position.Z);
-            ma_sound_group_set_direction(group, forward.X, forward.Y, forward.Z);
-            ma_sound_group_set_velocity(group, velocity.X, velocity.Y, velocity.Z);
+            for(int i = 0; i < sounds.Count; i++)
+            {
+                if(sounds[i].isLoaded)
+                {
+                    ma_sound_set_position(sounds[i].clip.Sound, position.X, position.Y, position.Z);
+                    ma_sound_set_direction(sounds[i].clip.Sound, direction.X, direction.Y, direction.Z);
+                    ma_sound_set_velocity(sounds[i].clip.Sound, velocity.X, velocity.Y, velocity.Z);
+                }
+            }
         }
 
         private void SetAtEnd(int sourceIndex, bool atEnd)

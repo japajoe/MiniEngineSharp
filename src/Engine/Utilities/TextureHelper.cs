@@ -9,7 +9,9 @@ namespace MiniEngine.Utilities
         public static Texture2D CreateGroundTexture()
         {
             Color grassColor = Color.Green;
+            grassColor.r = 0.2f;
             grassColor.g = 0.7f;
+            grassColor.b = 0.2f;
             return CreateGroundTexture(512, 512, grassColor, Color.Brown, 0.85f, 0);
         }
 

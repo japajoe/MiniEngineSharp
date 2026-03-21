@@ -315,7 +315,7 @@ namespace MiniEngine.GraphicsManagement
                 case ShaderType.FragmentShader:
                     throw new Exception("Fragment shader compilation failed: " + infoLog);
                 case ShaderType.VertexShader:
-                    throw new Exception("Vertex shader compilation failed: " + infoLog);
+                    throw new Exception("Vertex shader compilation failed: " + infoLog + "\n\n" + source);
                 default:
                     throw new Exception("Unknown shader compilation failed: " + infoLog);
                 }

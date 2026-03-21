@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ImGuiNET;
-using MiniAudioEx.Utilities;
 using MiniEngine.AudioManagement;
 using MiniEngine.Core;
 using MiniEngine.GraphicsManagement;
 using MiniEngine.GraphicsManagement.Renderers;
-using MiniEngine.GraphicsManagent;
 using MiniEngine.Utilities;
 using OpenTK.Mathematics;
 
@@ -22,10 +20,6 @@ namespace MiniEngine
 		public CubeObject()
 		{
 			model = ModelGenerator.Get(ModelName.Cube);
-			audioSource = new AudioSource();
-			audioSource.transform.SetParent(model.transform);
-			audioSource.AttenuationModel = AttenuationModel.Linear;
-			audioSource.Spatial = true;
 		}
 
         public void Dispose()
@@ -41,7 +35,7 @@ namespace MiniEngine
 		private AudioClip audioClip;
 		private Camera camera;
 		private List<Light> lights; 
-		private ProceduralSkybox skybox;
+		private DayNightController dayNightController;
         private Model ground;
 		private List<CubeObject> cubes;
 		private CameraController cameraController;
@@ -94,9 +88,10 @@ namespace MiniEngine
 
 			lights = new List<Light>();
 			lights.Add(new Light());
+
 			lights[0].Type = LightType.Directional;
 			lights[0].CastShadows = true;
-			lights[0].transform.rotation= Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(56.0f));
+			lights[0].transform.rotation = Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(56.0f));
 
 			cubes = new List<CubeObject>();
 			cubes.Add(new CubeObject());
@@ -105,7 +100,7 @@ namespace MiniEngine
 			cubes[0].model.GetChild(0).Color = Color.Orange;
 			
 			cubes[1].model.GetChild(0).Color = Color.Purple;
-			cubes[1].model.transform.position = new Vector3(10, 2, 3);
+			cubes[1].model.transform.position = new Vector3(2, 2, -10);
             
 			ground = ModelGenerator.Get(ModelName.Plane);
             ground.transform.scale = new Vector3(1000, 1, 1000);
@@ -115,19 +110,13 @@ namespace MiniEngine
 			ground.GetChild(0).Texture = groundTexture;
 			ground.GetChild(0).TextureTiling = new Vector2(500, 500);
 
-			skybox = new ProceduralSkybox();
-			skybox.Rayleigh = 3.339f;
-			skybox.Turbidity = 1.0f;
-			skybox.MieCoefficient = 0.0075f;
-			skybox.MieDirectionalG = 0.4f;
-			skybox.Exposure = 0.25f;
-    		skybox.CloudCoverage = 0.39f;
-    		skybox.CloudDensity = 0.6f;
-			skybox.SetSunPositionFromDirection(lights[0].transform.forward);
-
 			Graphics.Add(camera);
-			Graphics.Add(lights[0]);
-			Graphics.Add(skybox);
+			
+			for(int i = 0; i < lights.Count; i++)
+				Graphics.Add(lights[i]);
+			
+			dayNightController = new DayNightController(lights[0]);
+
 			Graphics.Add(ground);
 
 			for(int i = 0; i < cubes.Count; i++)
@@ -141,6 +130,12 @@ namespace MiniEngine
 			audioListener.transform.SetParent(camera.transform);
 
 
+			cubes[1].audioSource = new AudioSource();
+			cubes[1].audioSource.transform.SetParent(cubes[1].model.transform);
+			cubes[1].audioSource.AttenuationModel = AttenuationModel.Linear;
+			cubes[1].audioSource.Spatial = true;
+			cubes[1].audioSource.Loop = true;
+			//cubes[1].audioSource.Play(audioClip);
 			
 			LoadStations();
         }
@@ -175,10 +170,6 @@ namespace MiniEngine
 			shoutCast.Dispose();
         }
 
-		private float testVolume = 0.5f;
-		private Color buttonColor = new Color(0.2f, 0.4f, 0.8f, 1.0f);
-    	private Color sliderColor = new Color(0.1f, 0.8f, 0.2f, 1.0f);
-
         protected override void OnUpdate()
         {
 			cubes[0].model.transform.rotation = Quaternion.FromAxisAngle(new Vector3(0, 1, 0), MathHelper.DegreesToRadians(Time.Elapsed * 100.0f));
@@ -192,6 +183,11 @@ namespace MiniEngine
 
 			Graphics.GetAmbientOcclusionSettings().value = lights[0].Strength * 10.0f;
 
+			//Graphics.DrawLine(Vector3.Zero, new Vector3(1000, 0, 0), Color.Red);
+			//Graphics.DrawLine(Vector3.Zero, new Vector3(0, 1000, 0), Color.Blue);
+			//Graphics.DrawLine(Vector3.Zero, new Vector3(0, 0, -1000), Color.Green);
+
+			dayNightController.OnUpdate();
         }
 
         protected override void OnLateUpdate()
@@ -199,12 +195,18 @@ namespace MiniEngine
             cameraController.OnLateUpdate();
         }
 
+		private float testVolume = 0.5f;
+		private Color buttonColor = new Color(0.2f, 0.4f, 0.8f, 1.0f);
+    	private Color sliderColor = new Color(0.1f, 0.8f, 0.2f, 1.0f);
+
         protected override void OnGUI()
         {
 			float volume = stream.Volume;
 			float lightX = MathHelper.RadiansToDegrees(lights[0].transform.rotation.ToEulerAngles().X);
 
 			ImGui.DockSpaceOverViewport(0, ImGui.GetMainViewport(), ImGuiDockNodeFlags.PassthruCentralNode);
+
+			dayNightController.OnGUI();
 
 			if(ImGui.Begin("Info"))
 			{
@@ -225,12 +227,11 @@ namespace MiniEngine
 					stream.Volume = volume;
 				}
 
-				if(ImGui.SliderFloat("Light", ref lightX, 0.0f, 180.0f))
+				float timeOfDay = dayNightController.TimeOfDay;
+
+				if(ImGui.SliderFloat("Time", ref timeOfDay, 0.0f, 1.0f))
 				{
-					Quaternion rotation = Quaternion.FromAxisAngle(Vector3.UnitX, MathHelper.DegreesToRadians(lightX));
-					lights[0].transform.rotation = rotation;
-					skybox.SetSunPositionFromDirection(lights[0].transform.forward);
-					World.FogColor = skybox.SkyColor;
+					dayNightController.TimeOfDay = timeOfDay;
 				}
 
 				if (ImGui.Combo("Select Stream", ref selectedStreamIndex, streams, streams.Length))

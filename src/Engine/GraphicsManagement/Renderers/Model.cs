@@ -257,9 +257,6 @@ namespace MiniEngine.GraphicsManagement.Renderers
                     shader.SetInt(UniformName.TextureShadow, unit);
                 }
 
-
-                
-
                 shader.SetMat4(UniformName.Model, model);
                 shader.SetMat3(UniformName.ModelInverted, modelInverted);
                 shader.SetMat4(UniformName.MVP, mvp);

@@ -31,6 +31,7 @@ namespace MiniEngine.GraphicsManagement
                 models.Add(null);
             }
             
+            models[(int)ModelName.Capsule] = CreateCapsule(new Vector3(1, 1, 1));
             models[(int)ModelName.Cube] = CreateCube(new Vector3(1, 1, 1));
             models[(int)ModelName.Plane] = CreatePlane(new Vector3(1, 1, 1));
             models[(int)ModelName.Sphere] = CreateSphere(new Vector3(1, 1, 1));
@@ -159,6 +160,138 @@ namespace MiniEngine.GraphicsManagement
             GL.BufferData(BufferTargetARB.ElementArrayBuffer, pIndices, BufferUsageARB.StaticDraw);
 
             GL.BindVertexArray(0);
+        }
+
+        private static ModelProtoType CreateCapsule(Vector3 scale)
+        {
+            ModelProtoType model = new ModelProtoType();
+
+            model.vertices = new List<Vector3>();
+            model.uvs = new List<Vector2>();
+            model.normals = new List<Vector3>();
+            model.indices = new List<int>();
+
+            float height = 2.0f;
+            float radius = 0.5f;   
+            int segments = 32;
+            int rings = 8;
+            float cylinderHeight = height - radius * 2;
+            int vertexCount = 2 * rings * segments + 2;
+            int triangleCount = 4 * rings * segments;
+            float horizontalAngle = 360.0f / segments;
+            float verticalAngle = 90.0f / rings;
+
+            model.vertices.Resize(vertexCount);
+            model.normals.Resize(vertexCount);
+            model.uvs.Resize(vertexCount);
+            model.indices.Resize(3 * triangleCount);
+
+            int vi = 2;
+            int ti = 0;
+            int topCapIndex = 0;
+            int bottomCapIndex = 1;
+
+            model.vertices[topCapIndex] = new Vector3(0, cylinderHeight / 2 + radius, 0);
+            model.normals[topCapIndex] = new Vector3(0, 1, 0);
+            model.vertices[bottomCapIndex] = new Vector3(0, -cylinderHeight / 2 - radius, 0);
+            model.normals[bottomCapIndex] = new Vector3(0, -1, 0);
+
+            for (int s = 0; s < segments; s++)
+            {
+                for (int r = 1; r <= rings; r++)
+                {
+                    // Top cap vertex
+                    Vector3 normal = PointOnSphere(1, s * horizontalAngle, 90 - r * verticalAngle);
+                    Vector3 vertex = new Vector3(radius * normal.X, radius * normal.Y + cylinderHeight / 2, radius * normal.Z);
+                    model.vertices[vi] = vertex;
+                    model.normals[vi] = normal;
+                    vi++;
+
+                    // Bottom cap vertex
+                    model.vertices[vi] = new Vector3(vertex.X, -vertex.Y, vertex.Z);
+                    model.normals[vi] = new Vector3(normal.X, -normal.Y, normal.Z);
+                    vi++;
+
+                    int top_s1r1 = vi - 2;
+                    int top_s1r0 = vi - 4;
+                    int bot_s1r1 = vi - 1;
+                    int bot_s1r0 = vi - 3;
+                    int top_s0r1 = top_s1r1 - 2 * rings;
+                    int top_s0r0 = top_s1r0 - 2 * rings;
+                    int bot_s0r1 = bot_s1r1 - 2 * rings;
+                    int bot_s0r0 = bot_s1r0 - 2 * rings;
+
+                    if (s == 0)
+                    {
+                        top_s0r1 += vertexCount - 2;
+                        top_s0r0 += vertexCount - 2;
+                        bot_s0r1 += vertexCount - 2;
+                        bot_s0r0 += vertexCount - 2;
+                    }
+
+                    // Create cap triangles
+                    if (r == 1)
+                    {
+                        model.indices[3 * ti + 0] = topCapIndex;
+                        model.indices[3 * ti + 1] = top_s0r1;
+                        model.indices[3 * ti + 2] = top_s1r1;
+                        ti++;
+
+                        model.indices[3 * ti + 0] = bottomCapIndex;
+                        model.indices[3 * ti + 1] = bot_s1r1;
+                        model.indices[3 * ti + 2] = bot_s0r1;
+                        ti++;
+                    }
+                    else
+                    {
+                        model.indices[3 * ti + 0] = top_s1r0;
+                        model.indices[3 * ti + 1] = top_s0r0;
+                        model.indices[3 * ti + 2] = top_s1r1;
+                        ti++;
+
+                        model.indices[3 * ti + 0] = top_s0r0;
+                        model.indices[3 * ti + 1] = top_s0r1;
+                        model.indices[3 * ti + 2] = top_s1r1;
+                        ti++;
+
+                        model.indices[3 * ti + 0] = bot_s0r1;
+                        model.indices[3 * ti + 1] = bot_s0r0;
+                        model.indices[3 * ti + 2] = bot_s1r1;
+                        ti++;
+
+                        model.indices[3 * ti + 0] = bot_s0r0;
+                        model.indices[3 * ti + 1] = bot_s1r0;
+                        model.indices[3 * ti + 2] = bot_s1r1;
+                        ti++;
+                    }
+                }
+
+                // Create side triangles
+                int top_s1 = vi - 2;
+                int top_s0 = top_s1 - 2 * rings;
+                int bot_s1 = vi - 1;
+                int bot_s0 = bot_s1 - 2 * rings;
+                
+                if (s == 0)
+                {
+                    top_s0 += vertexCount - 2;
+                    bot_s0 += vertexCount - 2;
+                }
+
+                model.indices[3 * ti + 0] = top_s0;
+                model.indices[3 * ti + 1] = bot_s1;
+                model.indices[3 * ti + 2] = top_s1;
+                ti++;
+
+                model.indices[3 * ti + 0] = bot_s0;
+                model.indices[3 * ti + 1] = bot_s1;
+                model.indices[3 * ti + 2] = top_s0;
+                ti++;
+            }
+
+            PrepareModelPrototype(model, scale, "Cube", true);
+            
+            return model;
         }
 
         private static ModelProtoType CreateCube(Vector3 scale)
@@ -385,6 +518,23 @@ namespace MiniEngine.GraphicsManagement
             PrepareModelPrototype(model, scale, "Sphere", false);
             
             return model;
+        }
+
+        private static Vector3 PointOnSpheroid(float radius, float height, float horizontalAngle, float verticalAngle)
+        {
+            float horizontalRadians = MathHelper.DegreesToRadians(horizontalAngle);
+            float verticalRadians = MathHelper.DegreesToRadians(verticalAngle);
+            float cosVertical = (float)Math.Cos(verticalRadians);
+
+            return new Vector3(
+                radius * (float)Math.Sin(horizontalRadians) * cosVertical,
+                height * (float)Math.Sin(verticalRadians),
+                radius * (float)Math.Cos(horizontalRadians) * cosVertical);
+        }
+
+        private static Vector3 PointOnSphere(float radius, float horizontalAngle, float verticalAngle)
+        {
+            return PointOnSpheroid(radius, radius, horizontalAngle, verticalAngle);
         }
     }
 }

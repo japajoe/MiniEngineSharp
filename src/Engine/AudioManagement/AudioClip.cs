@@ -123,7 +123,7 @@ namespace MiniEngine.AudioManagement
             context.Add(this);
         }
 
-        internal bool CopyTo(AudioClip other, ma_sound_group_ptr group = default)
+        internal bool CopyTo(AudioClip other, ma_sound_group_ptr group)
         {
             if(context == null)
             {

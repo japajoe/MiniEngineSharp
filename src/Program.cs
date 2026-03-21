@@ -1,18 +1,38 @@
 ﻿using System;
-using MiniAudioEx.Native;
+using System.Text;
+using System.Threading.Tasks;
+using MiniEngine.Utilities;
 
 namespace MiniEngine
 {
 	class Program
 	{
-		static void Main2(string[] args)
+		static async Task Main2(string[] args)
 		{
-			ma_sound_ptr sound = new ma_sound_ptr(true);
-			if(MiniAudioNative.ma_sound_is_playing(sound) > 0)
+			HttpClient client = new HttpClient();
+			var request = new HttpClient.Request("https://directory.shoutcast.com/Home/BrowseByGenre", HttpClient.Method.Post);
+
+            request.AddHeader("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0");
+            request.AddHeader("Accept", "*/*");
+            request.AddHeader("Accept-Language", "en-US,en;q=0.5");
+            request.AddHeader("Accept-Encoding", "gzip, deflate, br, zstd");
+            request.AddHeader("X-Requested-With", "XMLHttpRequest");
+            request.AddHeader("Origin", " https://directory.shoutcast.com");
+            request.AddHeader("Sec-GPC", "1");
+            request.AddHeader("Connection", "keep-alive");
+            request.AddHeader("Referer", "https://directory.shoutcast.com/");
+            request.AddHeader("Sec-Fetch-Dest", "empty");
+            request.AddHeader("Sec-Fetch-Mode", "cors");
+            request.AddHeader("Sec-Fetch-Site", "same-origin");
+            request.AddHeader("Priority", "u=0");
+			request.SetContent("genrename=Rap", "application/x-www-form-urlencoded; charset=UTF-8");
+			
+			var response = await client.Send(request);
+
+			if(response.content.ReadAsString(out string text, response.contentLength))
 			{
-				Console.WriteLine("Is playing");
+				Console.WriteLine(text);
 			}
-			sound.Free();
 		}
 		
 		static void Main(string[] args)

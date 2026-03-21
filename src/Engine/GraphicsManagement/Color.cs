@@ -1,7 +1,9 @@
 using System;
+using System.Runtime.InteropServices;
 
 namespace MiniEngine.GraphicsManagement
 {
+    [StructLayout(LayoutKind.Sequential)]
     public struct Color
     {
         public float r;

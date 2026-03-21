@@ -5,7 +5,6 @@ using MiniEngine.GraphicsManagement.PostProcessing;
 using MiniEngine.GraphicsManagement.Renderers;
 using MiniEngine.GraphicsManagement.Shaders;
 using MiniEngine.GraphicsManagement.Shaders.PostProcessing;
-using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 
@@ -16,18 +15,6 @@ namespace MiniEngine.GraphicsManagement
         Color,
         Brightness
     }
-
-	public enum ToneMappingStyle
-	{
-		Reinhard = 0,
-		Aces = 1,
-		Uncharted = 2,
-		Exponential = 3,
-		Reinhard_Luma = 4,
-		Filmic = 5,
-		Lottes = 7,
-		Uchimura = 7
-	}
 
     public class BloomSettings
     {
@@ -60,11 +47,12 @@ namespace MiniEngine.GraphicsManagement
     public enum ShaderName : int
     {
         Bloom = 0,
-        BloomFilter = 1,
-        Screen = 2,
-        Standard = 3,
-        ProceduralSkybox = 4,
-        ShadowDepth = 5,
+        BloomFilter,
+        Line,
+        Screen,
+        Standard,
+        ProceduralSkybox,
+        ShadowDepth,
         COUNT
     }
 
@@ -80,11 +68,13 @@ namespace MiniEngine.GraphicsManagement
         public PingPongBuffer pingpongBuffer;
         public BloomSettings bloomSettings;
         public AmbientOcclusionSettings ambientOcclusion;
+        public LineRenderer lineRenderer;
         public ImGuiController imGuiController;
         public int width;
         public int height;
         public int screenVAO;
         public bool dirty;
+        public bool bypassColorPass = false;
 
         public GraphicsContext(int width, int height)
         {
@@ -116,6 +106,8 @@ namespace MiniEngine.GraphicsManagement
             Shadow.Generate();
 
             Graphics2D.Initialize();
+            
+            lineRenderer = new LineRenderer();
         }
 
         public Shader GetShader(ShaderName name)
@@ -136,6 +128,12 @@ namespace MiniEngine.GraphicsManagement
         private const int FRAMEBUFFER_SCREEN1 = 1;
         private const int FRAMEBUFFER_SCREEN2 = 2;
 
+        public static bool BypassColorPass
+        {
+            get => context.bypassColorPass;
+            set => context.bypassColorPass = value;
+        }
+
         internal static void Initialize(int width, int height)
         {
             context = new GraphicsContext(width, height);
@@ -143,7 +141,6 @@ namespace MiniEngine.GraphicsManagement
             CreateFrameBuffers();
             CreateUniformBuffers();
             CreateShaders();
-            CreateTextures();
         }
 
         internal static void Destroy()
@@ -155,14 +152,17 @@ namespace MiniEngine.GraphicsManagement
         {
             InvalidateFrameBuffers();
             UpdateUniformBuffers();
-            RenderShadowPass();
-            RenderColorPass();
 
             FrameBuffer fboMain = context.frameBuffers[FRAMEBUFFER_MAIN];
             FrameBuffer fboScreen1 = context.frameBuffers[FRAMEBUFFER_SCREEN1];
 
-            fboMain.Blit(fboScreen1, BlitOption.Color | BlitOption.Depth);
-            fboMain.Blit(fboScreen1, BlitOption.Color, 1, 1);
+            if(!context.bypassColorPass)
+            {
+                RenderShadowPass();
+                RenderColorPass();
+                fboMain.Blit(fboScreen1, BlitOption.Color | BlitOption.Depth);
+                fboMain.Blit(fboScreen1, BlitOption.Color, 1, 1);
+            }
 
             FrameBuffer outputFBO = RenderPostProcessingPass();
 
@@ -178,9 +178,7 @@ namespace MiniEngine.GraphicsManagement
 
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2d, outputFBO.GetColorAttachment((int)FrameBufferTextureTarget.Color));
-            screenShader.SetInt("uTexture", 0);
-            screenShader.SetInt("uToneMappingStyle", (int)ToneMappingStyle.Aces);
-            screenShader.SetInt("uDithering", 1);
+            screenShader.SetInt(UniformName.Texture, 0);
             
             GL.BindVertexArray(context.screenVAO);
             GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
@@ -284,13 +282,22 @@ namespace MiniEngine.GraphicsManagement
             Shader shadowDepthShader = context.GetShader(ShaderName.ShadowDepth);
             Shader bloomShader = context.GetShader(ShaderName.Bloom);
             Shader bloomFilterShader = context.GetShader(ShaderName.BloomFilter);
+            Shader lineShader = context.GetShader(ShaderName.Line);
 
-            screenShader.Generate(ScreenShader.vertexSource, ScreenShader.fragmentSource);
-            standardShader.Generate(StandardShader.vertexSource, StandardShader.fragmentSource);
-            proceduralSkyboxShader.Generate(ProceduralSkyboxShader.vertexSource, ProceduralSkyboxShader.fragmentSource);
-            shadowDepthShader.Generate(ShadowDepthShader.vertexSource, ShadowDepthShader.fragmentSource);
-            bloomShader.Generate(PostProcessingShader.vertexSource, BloomShader.fragmentSource);
-            bloomFilterShader.Generate(PostProcessingShader.vertexSource, BloomFilterShader.fragmentSource);
+            try
+            {
+                screenShader.Generate(ScreenShader.vertexSource, ScreenShader.fragmentSource);
+                standardShader.Generate(StandardShader.vertexSource, StandardShader.fragmentSource);
+                proceduralSkyboxShader.Generate(ProceduralSkyboxShader.vertexSource, ProceduralSkyboxShader.fragmentSource);
+                shadowDepthShader.Generate(ShadowDepthShader.vertexSource, ShadowDepthShader.fragmentSource);
+                bloomShader.Generate(PostProcessingShader.vertexSource, BloomShader.fragmentSource);
+                bloomFilterShader.Generate(PostProcessingShader.vertexSource, BloomFilterShader.fragmentSource);
+                lineShader.Generate(LineShader.vertexSource, LineShader.fragmentSource);
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
 
 			UniformBuffer uboCamera = Camera.GetUniformBuffer();
             UniformBuffer uboLights = Light.GetUniformBuffer();
@@ -304,11 +311,6 @@ namespace MiniEngine.GraphicsManagement
                 uboWorld.BindBlockToShader(context.shaders[i], World.UBO_BINDING_INDEX, World.UBO_NAME);
                 uboShadow.BindBlockToShader(context.shaders[i], Shadow.UBO_BINDING_INDEX, Shadow.UBO_NAME);
             }
-        }
-
-        private static void CreateTextures()
-        {
-            
         }
 
         private static void InvalidateFrameBuffers()
@@ -392,6 +394,8 @@ namespace MiniEngine.GraphicsManagement
             {
                 context.renderers[i].OnRender(projection, view, context.camera.Frustum);
             }
+
+            context.lineRenderer.OnRender(projection, view, context.camera.Frustum);
 
             fbo.Unbind();
         }
@@ -578,6 +582,11 @@ namespace MiniEngine.GraphicsManagement
         public static AmbientOcclusionSettings GetAmbientOcclusionSettings()
         {
             return context.ambientOcclusion;
+        }
+
+        public static void DrawLine(Vector3 from, Vector3 to, Color color)
+        {
+            context.lineRenderer.DrawLine(from, to, color);
         }
     }
 }
