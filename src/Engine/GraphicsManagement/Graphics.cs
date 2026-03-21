@@ -53,6 +53,7 @@ namespace MiniEngine.GraphicsManagement
         Standard,
         ProceduralSkybox,
         ShadowDepth,
+        Terrain,
         COUNT
     }
 
@@ -283,6 +284,7 @@ namespace MiniEngine.GraphicsManagement
             Shader bloomShader = context.GetShader(ShaderName.Bloom);
             Shader bloomFilterShader = context.GetShader(ShaderName.BloomFilter);
             Shader lineShader = context.GetShader(ShaderName.Line);
+            Shader terrainShader = context.GetShader(ShaderName.Terrain);
 
             try
             {
@@ -293,6 +295,7 @@ namespace MiniEngine.GraphicsManagement
                 bloomShader.Generate(PostProcessingShader.vertexSource, BloomShader.fragmentSource);
                 bloomFilterShader.Generate(PostProcessingShader.vertexSource, BloomFilterShader.fragmentSource);
                 lineShader.Generate(LineShader.vertexSource, LineShader.fragmentSource);
+                terrainShader.Generate(TerrainShader.vertexSource, TerrainShader.fragmentSource);
             }
             catch(Exception ex)
             {

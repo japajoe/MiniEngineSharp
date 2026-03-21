@@ -61,6 +61,8 @@ namespace MiniEngine.GraphicsManagement.Renderers
         private static Shader shader;
         private static Shader shadowDepthShader;
 
+        public int Resolution => m_resolution;
+
         public Terrain() : base()
         {
             m_vao = 0;
@@ -82,7 +84,7 @@ namespace MiniEngine.GraphicsManagement.Renderers
             m_textureTilling = new Vector2[4];
 
             if(shader == null)
-                shader = Graphics.GetShader(ShaderName.Standard);
+                shader = Graphics.GetShader(ShaderName.Terrain);
 
             if(shadowDepthShader == null)
                 shadowDepthShader = Graphics.GetShader(ShaderName.ShadowDepth);
@@ -116,14 +118,18 @@ namespace MiniEngine.GraphicsManagement.Renderers
                 m_textureTilling[i] = new Vector2(1, 1);
             }
 
+            float offset = (float)resolution * 0.5f * scale;
+
             for (int z = 0; z <= resolution; z++)
             {
                 for (int x = 0; x <= resolution; x++)
                 {
                     Vertex vertex = new Vertex();
 
-                    float posX = ((float)x / (float)resolution - 0.5f) * scale;
-                    float posZ = ((float)z / (float)resolution - 0.5f) * scale;
+                    //float posX = ((float)x / (float)resolution - 0.5f) * scale;
+                    //float posZ = ((float)z / (float)resolution - 0.5f) * scale;
+                    float posX = (float)x * scale - offset;
+                    float posZ = (float)z * scale - offset;
                     vertex.position = new Vector3(posX, 0.0f, posZ);
 
                     vertex.normal = new Vector3(0.0f, 1.0f, 0.0f);
@@ -260,7 +266,7 @@ namespace MiniEngine.GraphicsManagement.Renderers
 
         public override void OnRender(Matrix4 projection, Matrix4 view, Frustum frustum)
         {
-            if (isActive)
+            if (!isActive)
                 return;
 
             Matrix4 model = transform.GetModelMatrix();
@@ -269,9 +275,11 @@ namespace MiniEngine.GraphicsManagement.Renderers
             Texture2DArray shadowTexture = Shadow.Texture;
 
             float ambientOcclusion = m_ambientOcclusion;
+
             if(Graphics.GetAmbientOcclusionSettings().globalEnabled)
                 ambientOcclusion = Graphics.GetAmbientOcclusionSettings().value;
             
+            shader.Use();
             shader.SetMat4(UniformName.Model, model);
             shader.SetMat4(UniformName.MVP, mvp);
             shader.SetMat3(UniformName.ModelInverted, modelInverted);
@@ -282,7 +290,6 @@ namespace MiniEngine.GraphicsManagement.Renderers
             shader.SetInt(UniformName.Emissive, m_emissive ? 1 : -1);
             shader.SetFloat(UniformName.EmissionFactor, m_emissionFactor);
             shader.SetFloat(UniformName.BrightnessThreshold, m_brightnessThreshold);
-            
 
             int unit = 0;
             if(m_textureSplat != null)
@@ -328,6 +335,7 @@ namespace MiniEngine.GraphicsManagement.Renderers
             GL.BindVertexArray(m_vao);
             GL.DrawElements(PrimitiveType.Triangles, m_indices.Count, DrawElementsType.UnsignedInt, IntPtr.Zero);
             GL.BindVertexArray(0);
+
         }
     }
 }

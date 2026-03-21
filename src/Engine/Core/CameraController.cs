@@ -14,6 +14,12 @@ namespace MiniEngine.Core
         private Vector3 currentRotation;
         private bool isInitialized;
 
+        public float Speed
+        {
+            get => speed;
+            set => speed = value;
+        }
+
         public CameraController()
         {
             target = null;

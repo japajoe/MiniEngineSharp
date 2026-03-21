@@ -37,6 +37,7 @@ namespace MiniEngine
 		private List<Light> lights; 
 		private DayNightController dayNightController;
         private Model ground;
+		private Terrain terrain;
 		private List<CubeObject> cubes;
 		private CameraController cameraController;
 		private Texture2D groundTexture;
@@ -85,6 +86,7 @@ namespace MiniEngine
 
 			cameraController = new CameraController();
 			cameraController.Initialize(camera);
+			cameraController.Speed = 50;
 
 			lights = new List<Light>();
 			lights.Add(new Light());
@@ -117,7 +119,22 @@ namespace MiniEngine
 			
 			dayNightController = new DayNightController(lights[0]);
 
-			Graphics.Add(ground);
+			terrain = new Terrain();
+			terrain.Generate(128, 1.0f);
+
+			for(int z = 0; z < terrain.Resolution+1; z++)
+			{
+				for(int x = 0; x < terrain.Resolution+1; x++)
+				{
+					float h = Noise.GetSample(x, z) * 2.0f;
+					terrain.SetHeight(x, z, h, Terrain.HeightMode.Overwrite);
+				}
+			}
+
+			terrain.CommitChanges();
+
+			//Graphics.Add(ground);
+			Graphics.Add(terrain);
 
 			for(int i = 0; i < cubes.Count; i++)
             	Graphics.Add(cubes[i].model);
@@ -183,9 +200,9 @@ namespace MiniEngine
 
 			Graphics.GetAmbientOcclusionSettings().value = lights[0].Strength * 10.0f;
 
-			//Graphics.DrawLine(Vector3.Zero, new Vector3(1000, 0, 0), Color.Red);
-			//Graphics.DrawLine(Vector3.Zero, new Vector3(0, 1000, 0), Color.Blue);
-			//Graphics.DrawLine(Vector3.Zero, new Vector3(0, 0, -1000), Color.Green);
+			Graphics.DrawLine(Vector3.Zero, new Vector3(1000, 0, 0), Color.Red);
+			Graphics.DrawLine(Vector3.Zero, new Vector3(0, 1000, 0), Color.Blue);
+			Graphics.DrawLine(Vector3.Zero, new Vector3(0, 0, -1000), Color.Green);
 
 			dayNightController.OnUpdate();
         }
