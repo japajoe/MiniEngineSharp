@@ -121,6 +121,14 @@ namespace MiniEngine
 
 			terrain = new Terrain();
 			terrain.Generate(128, 1.0f);
+			terrain.Texture1 = groundTexture;
+			terrain.Texture2 = groundTexture;
+			terrain.Texture3 = groundTexture;
+			terrain.Texture4 = groundTexture;
+			terrain.Texture1Tilling = new Vector2(100, 100);
+			terrain.Texture2Tilling = new Vector2(100, 100);
+			terrain.Texture3Tilling = new Vector2(100, 100);
+			terrain.Texture4Tilling = new Vector2(100, 100);
 
 			for(int z = 0; z < terrain.Resolution+1; z++)
 			{

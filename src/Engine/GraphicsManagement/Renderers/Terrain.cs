@@ -9,11 +9,6 @@ namespace MiniEngine.GraphicsManagement.Renderers
 {
     public sealed class Terrain : Renderer
     {
-        private struct Uniform
-        {
-
-        }
-
 		public enum FilterMode
 		{
 			Bilinear,
@@ -62,6 +57,61 @@ namespace MiniEngine.GraphicsManagement.Renderers
         private static Shader shadowDepthShader;
 
         public int Resolution => m_resolution;
+        public Texture2D SplatTexture
+        {
+            get => m_textureSplat;
+            set => m_textureSplat = value;
+        }
+
+        public Texture2D Texture1
+        {
+            get => m_textures[0];
+            set => m_textures[0] = value;
+        }
+
+        public Texture2D Texture2
+        {
+            get => m_textures[1];
+            set => m_textures[1] = value;
+        }
+
+        public Texture2D Texture3
+        {
+            get => m_textures[2];
+            set => m_textures[2] = value;
+        }
+
+        public Texture2D Texture4
+        {
+            get => m_textures[3];
+            set => m_textures[3] = value;
+        }
+
+        public Vector2 Texture1Tilling
+        {
+            get => m_textureTilling[0];
+            set => m_textureTilling[0] = value;
+        }
+
+        public Vector2 Texture2Tilling
+        {
+            get => m_textureTilling[1];
+            set => m_textureTilling[1] = value;
+        }
+
+        public Vector2 Texture3Tilling
+        {
+            get => m_textureTilling[2];
+            set => m_textureTilling[2] = value;
+        }
+
+        public Vector2 Texture4Tilling
+        {
+            get => m_textureTilling[3];
+            set => m_textureTilling[3] = value;
+        }
+
+
 
         public Terrain() : base()
         {
